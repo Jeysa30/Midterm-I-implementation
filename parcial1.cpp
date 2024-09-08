@@ -10,22 +10,23 @@ using namespace std;
 struct Process{  
     int Pid;        	
     int AT; 			
-    int BT;   			
+    int BT;
     int PQ;    			
     int WT; 			
     int RT; 			
-    int CT;  			
+    int CT;
+    int BT2; 			
 };
 
 
 std::vector<Process> leerEntrada(const std::string &archivo){
-	std::ifstream inputFile(archivo);
-	if (!inputFile) {
-		std::cerr << "Error: No se pudo abrir el archivo " << std::endl;
-		return {};
-	}
+    std::ifstream inputFile(archivo);
+    if (!inputFile) {
+	std::cerr << "Error: No se pudo abrir el archivo " << std::endl;
+	return {};
+    }
 	
-	std::vector<Process> procesos;  
+    std::vector<Process> procesos;  
     std::string linea;   
     while (std::getline(inputFile, linea)) {  
         std::istringstream iss(linea);  
@@ -36,7 +37,8 @@ std::vector<Process> leerEntrada(const std::string &archivo){
         }
         p.WT = 0;       
         p.RT = -1;     
-        p.CT = 0;      
+        p.CT = 0;  
+	p.BT2 = p.BT;    
         procesos.push_back(p);
     }  
     inputFile.close();
@@ -46,13 +48,13 @@ std::vector<Process> leerEntrada(const std::string &archivo){
 
 //Funcion para el algoritmo de FCFS
 int FCFS(Process &proceso, int &time){
-	if (proceso.RT == -1) {  
+    if (proceso.RT == -1) {  
         proceso.RT = time; // Establecer tiempo de inicio  
     } 
     
-	time += proceso.BT;
+    time += proceso.BT;
     proceso.CT = time;
-    proceso.WT = time - proceso.AT - proceso.BT;
+    proceso.WT = time - proceso.AT - proceso.BT2;
     proceso.BT = 0;
     return time;
 };
@@ -70,9 +72,9 @@ int RR(Process &proceso, int quantum, int &time){
 		    proceso.BT -= quantum;
 		}
 		else{
-			time += proceso.BT;
+		    time += proceso.BT;
 		    proceso.CT = time;
-		    proceso.WT = time - proceso.AT - proceso.BT;
+		    proceso.WT = time - proceso.AT - proceso.BT2;
 		    proceso.BT = 0;
 		}
 		return time;
@@ -81,7 +83,7 @@ int RR(Process &proceso, int quantum, int &time){
 
 //Funcion para el algoritmo de MLQ
 void MLQ(std::vector<Process> &procesos, int quantum){
-	std::queue<Process*> colaRR;   
+    std::queue<Process*> colaRR;   
     std::queue<Process*> colaFCFS; 
     int time = 0;
     
@@ -98,14 +100,13 @@ void MLQ(std::vector<Process> &procesos, int quantum){
         } 
         
     	if (!colaRR.empty()){
-    		Process* currentProcess = colaRR.front();  
+    	    Process* currentProcess = colaRR.front();  
             colaRR.pop();
-		    
             RR(*currentProcess, quantum, time); // Llamar a la funcion RR  
             continue;
-		}
+	}
 		
-		if (!colaFCFS.empty()) {  
+	if (!colaFCFS.empty()) {  
             Process* currentProcess = colaFCFS.front();  
             colaFCFS.pop();  
             FCFS(*currentProcess, time); // Llamar a la funcion FCFS  
@@ -129,9 +130,9 @@ int MLFQ(){
 };
 
 int main(){
-	std::vector<Process> procesos = leerEntrada("entrada.txt");
+    std::vector<Process> procesos = leerEntrada("entrada.txt");
 	
-	int quantum = 3; // Tiempo de quantum para RR  
+    int quantum = 3; // Tiempo de quantum para RR  
     MLQ(procesos, quantum);
     
     std::cout << "MLQ\n";
