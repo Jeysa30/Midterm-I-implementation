@@ -10,11 +10,11 @@ using namespace std;
 struct Process{  
     int Pid;        	
     int AT; 			
-    int BT;
+    int BT;   
     int PQ;    			
     int WT; 			
     int RT; 			
-    int CT;
+    int CT; 
     int BT2; 			
 };
 
@@ -23,8 +23,8 @@ std::vector<Process> leerEntrada(const std::string &archivo){
     std::ifstream inputFile(archivo);
     if (!inputFile) {
 	std::cerr << "Error: No se pudo abrir el archivo " << std::endl;
-	return {};
-    }
+        return {};
+     }
 	
     std::vector<Process> procesos;  
     std::string linea;   
@@ -125,17 +125,56 @@ void MLQ(std::vector<Process> &procesos, int quantum){
 };
 
 //Funcion para el algoritmo de MLFQ
-int MLFQ(){
-	
+void MLFQ(std::vector<Process> &procesos, int quantum) {  
+    std::queue<Process*> colaRR; // Cola para Round Robin  
+    std::queue<Process*> colaFCFS; // Cola para FCFS  
+    int time = 0;  
+
+    while (true) {    
+        for (auto &p : procesos) {  
+            if (p.AT <= time && p.BT > 0) {  
+                colaRR.push(&p);  
+            }  
+        }  
+
+        // Si hay procesos en RR, ejecuta RR  
+        while (!colaRR.empty()) {  
+            Process* currentProcess = colaRR.front();  
+            colaRR.pop();  
+            if (RR(*currentProcess, quantum, time) < time) { 
+                if (currentProcess->BT > 0) {  	// Si el proceso aun tiene tiempo de rafaga restante, se agrega a la cola FCFS  
+                    colaFCFS.push(currentProcess);  
+                }  
+            }  
+        }  
+
+        // Ejecutar procesos en FCFS  
+        while (!colaFCFS.empty()) {  
+            Process* currentProcess = colaFCFS.front();  
+            colaFCFS.pop();  
+            FCFS(*currentProcess, time);  
+        }  
+
+        // Verificar si todos los procesos han terminado  
+        bool allDone = true;  
+        for (const auto &p : procesos) {  
+            if (p.BT > 0) {  
+                allDone = false;  
+                break;  
+            }  
+        }  
+        if (allDone) break;  
+    } 
 };
 
 int main(){
     std::vector<Process> procesos = leerEntrada("entrada.txt");
 	
-    int quantum = 3; // Tiempo de quantum para RR  
+    int quantum = 3;  
+    // Ejecutar el algoritmo MLQ
     MLQ(procesos, quantum);
     
-    std::cout << "MLQ\n";
+    std::cout << "---MLQ---\n";
     std::cout << "PID\tWT\tRT\tCT\n";  
     for (const auto &proceso : procesos) {  
         std::cout << "P"<< proceso.Pid << "\t"   
@@ -149,11 +188,42 @@ int main(){
         totalWT += proceso.WT;  
         totalRT += proceso.RT;  
     }
-    double avgWT = totalWT / procesos.size();  
-    double avgRT = totalRT / procesos.size();
+    double WT_MLQ = totalWT / procesos.size();  
+    double RT_MLQ = totalRT / procesos.size();
     
-    std::cout << "Tiempo de espera promedio (WT): " << avgWT << std::endl;  
-    std::cout << "Tiempo de respuesta promedio (RT): " << avgRT << std::endl;  
+    std::cout << "Tiempo de espera promedio (WT): " << WT_MLQ << std::endl;  
+    std::cout << "Tiempo de respuesta promedio (RT): " << RT_MLQ << "\n" << std::endl;  
+    
+    // Reiniciar los tiempos de cada proceso para MLFQ
+    for (auto &p : procesos) {  
+        p.WT = 0;  
+        p.RT = -1;  
+        p.CT = 0;  
+        p.BT = p.BT2; 
+    }  
+
+    // Ejecutar el algoritmo MLFQ  
+    MLFQ(procesos, quantum);  
+    
+    std::cout << "\n---MLFQ---\n";  
+    std::cout << "PID\tWT\tRT\tCT\n";  
+    for (const auto &proceso : procesos) {  
+        std::cout << "P" << proceso.Pid << "\t"   
+                  << proceso.WT << "\t"   
+                  << proceso.RT << "\t"   
+                  << proceso.CT << std::endl;  
+    }   
+    
+    double totalWT_MLFQ = 0, totalRT_MLFQ = 0;  
+    for (const auto &proceso : procesos) {  
+        totalWT_MLFQ += proceso.WT;  
+        totalRT_MLFQ += proceso.RT;  
+    }  
+    double WT_MLFQ = totalWT_MLFQ / procesos.size();  
+    double RT_MLFQ = totalRT_MLFQ / procesos.size();
+    
+    std::cout << "Tiempo de espera promedio (WT): " << WT_MLFQ << std::endl;  
+    std::cout << "Tiempo de respuesta promedio (RT): " << RT_MLFQ << std::endl; 
 
     return 0;
 	
