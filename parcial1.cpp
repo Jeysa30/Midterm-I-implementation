@@ -16,19 +16,18 @@ struct Process{
     int RT; 			
     int CT; 
     int TAT;
-    int BT2;
-    std::vector<std::string> algorithms;  			
+    int BT2;			
 };
 
 
 std::vector<Process> leerEntrada(const std::string &archivo){
-	std::ifstream inputFile(archivo);
-	if (!inputFile) {
-		std::cerr << "Error: No se pudo abrir el archivo " << std::endl;
-		return {};
-	}
+     std::ifstream inputFile(archivo);
+     if (!inputFile) {
+	  std::cerr << "Error: No se pudo abrir el archivo " << std::endl;
+	  return {};
+     }
 	
-	std::vector<Process> procesos;  
+    std::vector<Process> procesos;  
     std::string linea;   
     while (std::getline(inputFile, linea)) {  
         std::istringstream iss(linea);  
@@ -51,8 +50,8 @@ std::vector<Process> leerEntrada(const std::string &archivo){
 
 //Funcion para el algoritmo de FCFS
 int FCFS(Process &proceso, int &time){
-	if (proceso.RT == -1) {  
-        proceso.RT = time; // Establecer tiempo de inicio  
+    if (proceso.RT == -1) {  
+        proceso.RT = time; 
     } 
     
     time += proceso.BT;
@@ -60,7 +59,6 @@ int FCFS(Process &proceso, int &time){
     proceso.WT = time - proceso.AT - proceso.BT2;
     proceso.BT = 0;
     proceso.TAT = time - proceso.AT;
-    proceso.algorithms.push_back("FCFS");
     return time;
 };
 
@@ -69,7 +67,7 @@ int FCFS(Process &proceso, int &time){
 int RR(Process &proceso, int quantum, int &time){
 	if (proceso.BT > 0) {
 		if (proceso.RT == -1) {  
-		    proceso.RT = time; // Establecer tiempo de inicio  
+		    proceso.RT = time; 
 		} 
 		
 		if (proceso.BT > quantum) {
@@ -77,12 +75,11 @@ int RR(Process &proceso, int quantum, int &time){
 		    proceso.BT -= quantum;
 		}
 		else{
-			time += proceso.BT;
+		    time += proceso.BT;
 		    proceso.CT = time;
 		    proceso.WT = time - proceso.AT - proceso.BT2;
 		    proceso.BT = 0;
 		    proceso.TAT = time - proceso.AT;
-		    proceso.algorithms.push_back("RR");
 		}
 		return time;
 	}
@@ -144,29 +141,27 @@ void MLFQ(std::vector<Process> &procesos, int quantum) {
     int time = 0;  
 
     while (true) {    
-        for (auto &p : procesos) {  
-            if (p.AT <= time && p.BT > 0) {  
-                colaRR.push(&p);  
-            }  
-        }  
+        for (auto &p : procesos) {    
+            colaRR.push(&p);
+        }
 
         // Si hay procesos en RR, ejecuta RR  
         while (!colaRR.empty()) {  
             Process* currentProcess = colaRR.front();  
             colaRR.pop();  
-            if (RR(*currentProcess, quantum, time) < time) { 
-                if (currentProcess->BT > 0) {  	// Si el proceso aun tiene tiempo de rafaga restante, se agrega a la cola FCFS  
-                    colaFCFS.push(currentProcess);  
-                }  
+            RR(*currentProcess, quantum, time); 
+            if (currentProcess->BT > 0) {  	// Si el proceso aun tiene tiempo de rafaga restante, se agrega a la cola FCFS  
+                colaFCFS.push(currentProcess); 
             }  
         }  
-
+		
         // Ejecutar procesos en FCFS  
         while (!colaFCFS.empty()) {  
             Process* currentProcess = colaFCFS.front();  
             colaFCFS.pop();  
             FCFS(*currentProcess, time);  
         }  
+        
 
         // Verificar si todos los procesos han terminado  
         bool allDone = true;  
@@ -176,14 +171,14 @@ void MLFQ(std::vector<Process> &procesos, int quantum) {
                 break;  
             }  
         }  
-        if (allDone) break;  
+        if (allDone) break;
     } 
 };
 
 int main(){
     std::vector<Process> procesos = leerEntrada("entrada.txt");
 	
-    int quantum = 1;  
+    int quantum = 2;  
     // Ejecutar el algoritmo MLQ
     MLQ(procesos, quantum);
     
@@ -194,12 +189,7 @@ int main(){
                   << proceso.WT << "\t"   
                   << proceso.RT << "\t"   
                   << proceso.CT << "\t" 
-                  << proceso.TAT << "\t";
-                  
-	for (const auto &alg : proceso.algorithms) {  
-        	std::cout << alg << " ";  
-    	}  
-    	std::cout << std::endl; 
+                  << proceso.TAT << "\t"<< std::endl; 
     } 
     
     double totalWT = 0, totalTAT = 0;  
@@ -232,12 +222,7 @@ int main(){
                   << proceso.WT << "\t"   
                   << proceso.RT << "\t"   
                   << proceso.CT << "\t" 
-                  << proceso.TAT << "\t";
-                  
-	for (const auto &alg : proceso.algorithms) {  
-        	std::cout << alg << " ";  
-    	}  
-    	std::cout << std::endl; 
+                  << proceso.TAT << "\t" << std::endl; 
     }   
     
     double totalWT_MLFQ = 0, totalTAT_MLFQ = 0;  
